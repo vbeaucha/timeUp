@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+  <head>
+  	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>TimeUp</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+  </head>
+  <body class="bg-light d-flex flex-column h-100">
+
+      <header>
+    
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+      <div class="container d-flex justify-content-between">
+      <div class="dropdown">
+        <a href="#" class="navbar-brand d-flex align-items-center">
+          <strong>Time Up</strong>  
+        </a>
+    </div>
+      </div>
+    </div>
+  </header>
+
+  <main role="main" class="flex-shrink-0">
+    <div class="container">
+      <div class="my-3 p-3 bg-white rounded shadow-sm" id="homeDiv">
+        <input type="text" id="PlayerName" class="form-control" placeholder="Enter your name">
+        <h4 class="border-bottom border-gray pb-2 mb-2">Create Room</h4>
+
+        <form class="form-inline pb-3">
+          <input type="text" id="createRoomName" class="form-control" placeholder="Enter your name room">
+        </form>
+        <button id="Run"class="btn btn-primary btn-lg" onclick="CreateRoom()" >Create Room</button>
+
+        <h4 class="border-bottom border-gray pb-2 mb-2">Join Room</h4>
+        <form class="form-inline pb-3">
+          <input type="text" id="joinRoomName" class="form-control" placeholder="Room Name">
+        </form>
+        <button id="Run"class="btn btn-primary btn-lg" onclick="JoinRoom()" >Join Room</button>
+        
+      </div>
+
+      <div class="my-3 p-3 bg-white rounded shadow-sm" id="ConfigDiv">
+        <h4 class="border-bottom pb-2 mb-2">Config Room</h4>
+        <h5 class="border-bottom pb-2 mb-2" id="configRoomName"></h5>
+          <h4 class="mb-3" id="select-txt">Liste Joueur</h4>
+          <table class="table" id='playerList'>
+          </table>
+        <button id="RunGame" class="btn btn-primary btn-lg" onclick="RunGame()">Start Game</button>
+      </div>
+
+      <div class="my-3 p-3 bg-white rounded shadow-sm" id="MotDiv">
+        <h4 class="border-bottom pb-2 mb-2">Config Room</h4>
+        <hr class="mb-4">
+          <h4 class="mb-3" id="select-txt">Donner cinq mots à trouver</h4>
+          <form class="form-group pb-3">
+          <input type="text" id="word1" class="form-control" placeholder="mot un">
+          <input type="text" id="word2" class="form-control" placeholder="mot deux">
+          <input type="text" id="word3" class="form-control" placeholder="mot trois">
+          <input type="text" id="word4" class="form-control" placeholder="mot quatre">
+          <input type="text" id="word5" class="form-control" placeholder="mot cinq">
+          
+        </form>
+        <button id="buttonWords" class="btn btn-primary btn-lg" onclick="SendWords()">Ok</button>
+        <label id="motDisclamer">En attente des autres</label>
+        
+      </div>
+
+      <div class="my-3 p-3 bg-white rounded shadow-sm" id="phaseUnDic">
+        <h4 class="border-bottom pb-2 mb-2" id="titlePhase">Phase Un (45s par personne)</h4>
+         <div id="countdown">
+            <div class="values"></div>
+          </div>
+        <hr class="mb-4">
+        <label id="playerPoint"></label>
+        <form class="form-group pb-3" id="phaseUnPasTour">
+          <label>Ce n'est pas ton tour! </label>  
+        </form>
+        <div class=" pb-3 " id="phaseUnTour">
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="wordsAnwser"></span>
+          </div>
+          <div class="input-group mb-3">
+          <button id="readyToPlay" class="btn btn-primary btn-lg" onclick="readyToPlay()">Ready</button>
+          <button id="wordsFind" class="btn btn-primary btn-lg" onclick="wordsFind()"  disabled>Trouvé</button>
+          <button id="wordsPass" class="btn btn-primary btn-lg" onclick="wordsPass()"  disabled>Passé</button> 
+          </div> 
+        </div>
+
+        
+
+    </div>
+    <div class="my-3 p-3 bg-white rounded shadow-sm" id="endDiv">
+        <h4 class="border-bottom pb-2 mb-2">fin du Jeu</h4>
+        <hr class="mb-4">
+        <table class="table" id='endTable'>
+        </table>
+        <button class="btn btn-primary btn-lg" onclick="location.reload()">home</button>
+        </div>
+  </main>
+
+
+  <footer class="footer mt-auto py-3">
+      <div class="container">
+        <span class="text-muted">By TataVal</span>
+      </div>
+      <!-- Modal Config -->
+      <div class="modal fade" id="ModalConfig" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title" id="config-text"></h4>
+            </div>
+            <div class="modal-body" style="height:70vh">
+              <textarea readonly id="config-body"class="form-control" style="height:100%;font-size:large;overflow-y:scroll;resize:none;"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal Delete -->
+      <div class="modal fade" id="ModalDelete" role="dialog">
+        <div class="modal-dialog modal-confirm modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Confirmation</h4>  
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p id="txt-confirm">Do you really want to delete these records? This process cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger" onclick="DeleteConfirm(this.name)" id="delete-confirm" data-dismiss="modal">Delete</button>
+            </div>
+          </div>
+        </div>      
+      </div>
+
+      <!-- Modal Delete -->
+      <div class="modal fade" id="ModalErroMessage" role="dialog">
+        <div class="modal-dialog modal-confirm modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Error</h4>  
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p id="txt-modalError"></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">ok</button>
+            </div>
+          </div>
+        </div>      
+      </div>
+
+  </footer>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <!--<script>window.jQuery || document.write('<script src="/docs/4.3/assets/js/vendor/jquery-slim.min.js"><\/script>')</script>-->
+    <script type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/socket.io.js"></script>
+    <script src="/js/easytimer.min.js"></script>
+    <script src="/js/index.js"></script>
+  </body>
+</html>
