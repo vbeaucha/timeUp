@@ -1,0 +1,19 @@
+{
+  "name": "timeup",
+  "version": "1.0.0",
+  "description": "jeux",
+  "main": "server.js",
+  "scripts": {
+    "test": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vbeaucha/timeUp.git"
+  },
+  "author": "TataVal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vbeaucha/timeUp/issues"
+  },
+  "homepage": "https://github.com/vbeaucha/timeUp#readme"
+}
