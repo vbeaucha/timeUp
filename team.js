@@ -1,38 +1,40 @@
-class Team{
+module.exports  = class Team{
 
-	let playerList = new Map();
-	let teamPoint;
+	playerList;
+	teamPoint;
 
-	Team(){
-		this.playerList = new Map();
+	constructor(){
+		this.playerList = new Array();
 		this.teamPoint = 0;
 	}
 
-	function getPoint(){
+	getPoint(){
 		return this.teamPoint;
 	}
 
-	function getPlayer(){
+	getPlayer(){
 		return this.playerList;
 	}
 
-	function addPoint(){
+	addPoint(){
 		this.teamPoint++;
 	}
 
-	function removePoint(){
+	removePoint(){
 		this.teamPoint--;
 	}
 
-	function addPlayer(Player player){
+	addPlayer(player){
 		this.playerList.push(player);
 	}
 
-	function removePlayer(player){
-		this.playerList.delete(player);
+	removePlayer(player){
+		let index = this.playerList.indexOf(player);
+		if(index != -1 ){
+			this.playerList.splice(index, 1);
+		}
 	}
 
 
 }
 
-module.exports.Team = Team;

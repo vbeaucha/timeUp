@@ -1,16 +1,16 @@
 class Player {
 	
-	let playerName;
+	playerName;
 
 	Player(name){
 		this.playerName = name;
 	}
 
-	function setPlayerName(name){
+	setPlayerName(name){
 		this.playerName = name;
 	}
 
-	function getName(){
+	getName(){
 		return playerName;
 	}
 }
