@@ -1,9 +1,12 @@
-let Team = require("./team.js");
+let Room = require("./room.js");
 
 
-let newTeam = new Team();
-newTeam.addPlayer("valentin");
-newTeam.addPlayer("polo");
-console.log(newTeam.getPlayer());
-newTeam.removePlayer("mark")
-console.log(newTeam.getPlayer());
+let newRoom = new Room();
+
+newRoom.createTeam("test");
+newRoom.addPlayerToTeam('test',"valentin");
+newRoom.addPlayerToTeam('test',"polo");
+console.log(newRoom.getPlayerListOfTeam('test'));
+
+newRoom.removePlayerToTeam("test","valentin");
+console.log(newRoom.getPlayerListOfTeam('test'));
