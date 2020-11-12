@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+  <head>
+  	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Home confinement</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+  </head>
+  <body class="bg-light d-flex flex-column h-100">
+
+  <header>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <a class="navbar-brand" href="/">Confinement</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="/home">Home <span class="sr-only">(current)</span></a>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav mt-2 mt-md-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/logout">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  </header>
+
+  <main role="main" class="flex-shrink-0">
+    <div class="container">
+      <div class="my-3 p-3 bg-white rounded shadow-sm">
+        <h4 class="border-bottom border-gray pb-2 mb-2">Phase n°1 (45 secondes par joueur)</h4>
+        <h6 class="border-bottom border-gray pb-2 mb-2">Au tour de : <span id="playerId"> </span></h6>
+        <h6 class="border-bottom border-gray pb-2 mb-2">Vos Points : <span id="point"> </span></h6>
+          <span class="input-group-text col-sm-6 offset-sm-3 mb-2" id="getWord"></span>
+          <button type="button" class="btn btn-primary col-sm-6 offset-sm-3 mb-2" id="readyButton" onclick="readyToPlay()">Ready</button>
+          <button type="button" class="btn btn-primary col-sm-6 offset-sm-3 mb-2" id="findButton" onclick="findWord()">Trouvé</button>
+          <button type="button" class="btn btn-primary col-sm-6 offset-sm-3 mb-2" id="passButton" onclick="passWord()">Passé</button>
+          <button type="button" class="btn btn-primary col-sm-6 offset-sm-3 mb-2" id="passTurnButton" onclick="passTour()">Passer son tour</button>
+          
+          
+          
+        </div>
+        <% if(message.error){ %>
+          <div class="alert alert-warning" role="alert">
+            <label><strong>Error: </strong><%=message.error%></label>
+          </div>
+          <% } %>
+          <button class="btn btn-danger btn-lg col-sm-6 offset-sm-3 mb-2 " onclick="rageQuit()"> Quitter la room</button>
+      </div>
+        
+
+        
+      </div>
+    
+  </main>
+
+
+  <footer class="footer mt-auto py-3">
+      <div class="container">
+        <span class="text-muted">By TataVal</span>
+      </div>
+
+      <div class="modal fade" id="ModalConfirm" role="dialog">
+        <div class="modal-dialog modal-confirm modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Confirme</h4>  
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p>Demarer le Jeu?</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="">oui</button>
+              <button type="button" class="btn btn-danger" data-dismiss="modal">non</button>
+            </div>
+          </div>
+        </div>      
+      </div>
+
+  </footer>
+  <% if(user.name){ %>
+          <script type="text/javascript">let username="<%=user.name%>"</script>
+          <% } %>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <!--<script>window.jQuery || document.write('<script src="/docs/4.3/assets/js/vendor/jquery-slim.min.js"><\/script>')</script>-->
+    <script type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/socket.io.js"></script>
+    <script src="/js/easytimer.min.js"></script>
+    <script src="/timeUp/js/phaseUn.js"></script>
+  </body>
+</html>

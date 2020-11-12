@@ -6,403 +6,274 @@ var http = require('http'),
 	low = require('lowdb'),
 	FileSync = require('lowdb/adapters/FileSync'),
 	fs=require('fs'),
-	path = require('path');
+	path = require('path'),
+	ejs = require('ejs');
 
-var PORT= 8080,				//port du serveur web
-	DB_PATH="/data/";					//répertoire où seront stockés les fichiers json de log
+var passport = require('passport')
+  , LocalStrategy = require('passport-local').Strategy;
+  var bodyParser = require("body-parser");
+  var session = require('express-session');
+  var flash = require('connect-flash');
+
+let Room = require('./room.js')
+
+var PORT= 8090,				//port du serveur web
+	DB_PATH="./data/";					//répertoire où seront stockés les fichiers json de log
 
 if (!fs.existsSync(DB_PATH)){			//si le répertoire n'existe pas, on le crée
     fs.mkdirSync(DB_PATH);
 }
-let roomList = new Map();
-let socketList = new Map();
+
+
+app.use(express["static"](__dirname + '/public'));		//indique que les fichiers se trouvent dans le dossier public
+app.use(session({ secret: "cats",
+				resave: true,
+    			saveUninitialized: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
+app.set('views', __dirname + '/public');
+//app.engine('html', require('ejs'));
+app.set('view engine', 'ejs');
+
+let listRoom = new Map();
+
+/**********INIT DB******************/
+const adapter = new FileSync('./data/db.json');
+const db = low(adapter)
+
+db.defaults({user: [], count: 0 })
+  .write()
+
+let numberCount = db.get('count').value();
+if(numberCount == 0){
+	db.get('user').push({name:'admin',
+						password:'admin'})
+					.write();
+	db.update('count', n => n + 1)
+  		.write()
+}
+initUser();
+function initUser(){
+	let listUser = db.get('user');
+	for(let i = 0; i<listUser.value().length;i++){
+		let user = listUser.find({name:listUser.value()[i].name});
+		user.set('inGame',null).write();
+		user.set('nameRoom',null).write();
+	}
+}
+/**********************************/
+
+/**************PASSPORT*******************/
+
+passport.serializeUser(function(user, done){
+    done(null,user.name);
+});
+passport.deserializeUser(function(id, done){
+    let user = db.get('user').find({name:id}).value();
+    if(user) done(null,user);
+    else done(true,null);
+});
+
+
+passport.use('local-login',new LocalStrategy({
+	passReqToCallback : true
+},
+  function(req,username, password, done) {
+
+  	let user = db.get('user').find({name:username,password:password}).value();
+  	if(user) return done(null, user);
+  	else return done(null, false, req.flash('loginMessage','Bad Log'));
+  }
+));
+
+passport.use('local-signup', new LocalStrategy({
+    usernameField: 'username',
+    passwordField: 'password',
+    passReqToCallback: true
+},
+    function(req,username, password, done){
+    	let user = db.get('user').find({name:username,password:password}).value();
+    	if(user){
+    		return done(null, false, req.flash('signupMessage','The username already exists' ));
+    	}else{
+    		let newUser = {name:username,password:password,inGame:null,nameRoom:null};
+    		db.get('user').push(newUser).write();
+    		db.update('count', n => n + 1).write()
+    		return done(null, newUser);
+
+    	}
+    }));
+
+
+function isLoggedIn(req,res,next){
+if(req.isAuthenticated()){
+
+    return next();
+}
+res.redirect('/login');
+}
+
+/*****************************************/
+
+
 /******************WEB PAGE ********************/
+app.post('/login',
+  passport.authenticate('local-login', { successRedirect: '/home',
+                                   failureRedirect: '/login.html',
+                                   failureFlash: true })
+);
+
+app.post('/signup', passport.authenticate('local-signup', {
+    successRedirect: '/home',
+    failureRedirect: '/signup',
+    failureFlash: true
+}));
+
+app.post('/createRoom',isLoggedIn, function(req, res){
+
+	let nameRoom = req.body.nameRoom;
+	let gameName = req.body.nameGame;
+	if( nameRoom == ''){
+
+    	res.render('home', {
+        	user: req.user, message : {errorCreate : "Entrez un nom de room"}
+    	});
+	} else if (listRoom.get(nameRoom)){
+		res.render('home', {
+        	user: req.user, message : {errorCreate :"Room déjà existante"}
+    	});
+		
+	}else{
+		listRoom.set(nameRoom,new Room(gameName));
+		listRoom.get(nameRoom).addUser(req.user.name);
+		db.get('user').find({name:req.user.name}).set('inGame',gameName).write();
+		db.get('user').find({name:req.user.name}).set('nameRoom',nameRoom).write();
+		res.render(listRoom.get(nameRoom).getEtat(), {
+        	user: req.user, message : {successCreate : "room created"}
+    	});
+
+		
+	}
+});
+
+app.post('/joinRoom',isLoggedIn, function(req, res){
+	let nameRoom = req.body.nameRoom
+	if( nameRoom == ''){
+    	res.render('home', {
+        	user: req.user, message : {errorJoin:"Entrez un nom de room"}
+    	});
+	} else if (listRoom.get(nameRoom)){
+		listRoom.get(nameRoom).addUser(req.user.name)
+		db.get('user').find({name:req.user.name}).set('inGame',listRoom.get(nameRoom).getGameName).write();
+		db.get('user').find({name:req.user.name}).set('nameRoom',nameRoom).write();
+		res.render(listRoom.get(nameRoom).getEtat(), {
+        	user: req.user, message : {successJoin:"Room non trouvé"}
+    	});
+		
+	}else{
+		res.render('home', {
+        	user: req.user, message : {errorJoin:"Room non trouvé"}
+    	});
+		
+	}
+
+
+});
+
 httpApp.listen(PORT, function() {
     console.log("server web start on "+PORT);
   });
 
-app.get("/",function(req, res) {							//redirige  vers index.html.
-    return res.redirect('index.html');	
+app.get("/home",isLoggedIn,function(req, res) {
+    //return res.redirect('index.html');
+	if(req.user.inGame){
+	    	let room = listRoom.get(req.user.nameRoom);
+	    	if(room){
+	    		res.render(room.getEtat(),{
+	    			user: req.user, message :''});
+	    		}
+	    	else{
+	    		res.render('home', {
+        user: req.user, message : req.flash('info')
+    	})
+	    	}
+	}
+    else{
+    	res.render('home', {
+        user: req.user, message : req.flash('info')
+    	});
+    }	
   });
 
-app.use(express["static"](__dirname + '/public'));		//indique que les fichiers se trouvent dans le dossier public
+app.get('/logout', function (req, res) {
+	let user = db.get('user').find({name:req.user.name})
+	logoutUser(user);
+
+    req.logout();
+    res.redirect('/home');
+});
+app.get('/login', function (req, res) {
+    res.render("login",{signupMessage : req.flash("signupMessage"),
+						loginMessage: req.flash("loginMessage")});
+});
+app.get(":game/:page",isLoggedIn,function(req,res){
+	res.render(req.params.game+"/"+req.params.page,
+						{user : req.user,
+						message:req.flash('info')});
+})
+app.get("*",isLoggedIn,function(req,res){
+	res.redirect('/home');
+})
+
+
+
+
+
+
+/******************WEB PAGE ********************/
+
+/*****************SOCKET**********************/
 
 io.on('connection',function(socket){
-console.log("new Client connected : " +socket.handshake.address);
-socket.isPlayer=false;
 
+socket.emit("sendName");
+
+socket.on("username",function(username){
+	let user = db.get('user').find({'name':username}).value();
+	if(user && listRoom.get(user.nameRoom)){
+		listRoom.get(user.nameRoom).setUserSocket(username,socket);
+	}
+});
+
+socket.on("rageQuit",function(username){
+	let user = db.get('user').find({name:username})
+	logoutUser(user)
+	socket.emit("goTo",'/home');
+});
 
 socket.on("error",function(err){
 	console.log(err);
 });
 
 socket.on("disconnect",function(){
-	if (socket.isPlayer){
-		console.log(socket.playerName + " disconnected");
-		deconnectionPlayer(socket);
-	}
-	else console.log("client disconnected");
-});
 
-socket.on("tryCreateNewRoom",function(roomName,playerName){
-	if(roomList.get(roomName) == null){
-		roomList.set(roomName,new Object());
-		roomList.get(roomName).name = roomName;
-		roomList.get(roomName).playerList = new Array();
-		roomList.get(roomName).playerPoint = new Map();
-		roomList.get(roomName).playerList.push(playerName);
-		roomList.get(roomName).playerPoint.set(playerName,0);
-		roomList.get(roomName).gameStart=false;
-		socket.isPlayer=true;
-		socket.playerName=playerName;
-		socket.playerRoom = roomName;
-		socket.isAdmin = true;
-		socketList.set(playerName,socket)
-		console.log(roomName +" Created")
-
-		socket.emit("goToConfigRoom",roomName,true);
-		sendListToAllPlayer(roomName)
-	}else{
-		socket.emit("errorMessage","Room "+ roomName +"dejà créer");
-	}
-});
-
-socket.on("tryJoinRoom",function(roomName,playerName){
-	if(roomList.get(roomName) != null){
-		roomList.get(roomName).playerList.push(playerName);
-		roomList.get(roomName).playerPoint.set(playerName,0);
-		socket.isPlayer=true;
-		socket.playerName=playerName;
-		socket.playerRoom = roomName;
-		socket.isAdmin = false;
-		socketList.set(playerName,socket);
-		socket.emit("goToConfigRoom",roomName,false);
-		sendListToAllPlayer(roomName)
-	}else{
-		socket.emit("errorMessage","Room "+ roomName +" not found");
-	}
-});
-
-
-socket.on("startGame",function(){
-	StartGame(socket);
-});
-
-socket.on("playerWords",function(word1,word2,word3,word4,word5){
-	if(!socket.asChooseWord){
-		addWordsToList(socket.playerRoom,word1,word2,word3,word4,word5);
-		socket.asChooseWord=true;
-		checkIfEveryOneReady(socket.playerRoom);
-	}
-});
-
-socket.on("readyToPlay",function(){
-	let room = roomList.get(socket.playerRoom);
-	if(room){
-		playPhase(room);
-	}
-});
-
-socket.on("wordFind",function(word){
-	wordFind(socket.playerName,socket.playerRoom,word);
-});
-socket.on("wordPass",function(word){
-	wordPass(socket.playerRoom,word);
 });
 
 });
 
+/*********************************************/
 
-/******************WEB PAGE ********************/
-
-function sendListToAllPlayer(roomName){
-	let room = roomList.get(roomName);
-	if(room){
-	socketList.forEach((values,socketKey)=>{
-		for(let i = 0 ;i<room.playerList.length;i++) {
-  		if(room.playerList[i] == socketKey){
-  			values.emit("getPlayerList",room.playerList);
-  		}
-  		//
-	}
-	});
-}
-	
-
-}
-
-function deconnectionPlayer(socket){
-	let room = roomList.get(socket.playerRoom);
-	if(room){
-
-	const index = room.playerList.indexOf(socket.playerName);
-
-	if (index > -1) {
-  		room.playerList.splice(index, 1);
-	}
-	console.log(room.isPlayer,index);
-	if(room.gameStart && room.isPlayer == index){
-		console.log("coucou")
-		room.isPlayer = (room.isPlayer+1)%room.playerList.length;
-		if(socketList.get(room.playerList[room.isPlayer])){
-		socketList.get(room.playerList[room.isPlayer]).emit("yourTurn");
-		socketList.get(room.playerList[room.isPlayer]).emit("getPoint",room.playerPoint.get(room.playerList[room.isPlayer]));
-	}
-	}
-	if(room.playerList.length != 0){
-
-		sendListToAllPlayer(socket.playerRoom);
-	}
-	else{
-		console.log("delete room");
-		roomList.delete(socket.playerRoom);
-	}
-}
-}
-
-function StartGame(socket){
-
-	let room = roomList.get(socket.playerRoom);
-	if(room && !room.gameStart){
-		room.gameStart=true;
-		room.wordList = new Array();
-		room.phase = "chooseWords";
-	socketList.forEach((values,socketKey)=>{
-
-		for(let i = 0 ;i<room.playerList.length;i++) {
-  		if(room.playerList[i] == socketKey){
-  			values.asChooseWord=false;
-  			
-  			values.emit("chooseWords");
-  		}
-	}
-	});
-	}else{
-		if(room.phase =="un"){
-			socket.emit("startPhaseUn");
-		}else if(room.phase =="deux"){
-			socket.emit("startPhaseDeux");
-		}else if(room.phase =="trois"){
-			socket.emit("startPhaseTrois");
-		}else if(room.phase =="chooseWords"){
-			socket.asChooseWord=false;
-			socket.emit("chooseWords");
-		}
-		
-	}
-}
-
-function addWordsToList(roomName,word1,word2,word3,word4,word5){
-	let room = roomList.get(roomName);
-	if(room){
-		room.wordList.push(word1);
-		room.wordList.push(word2);
-		room.wordList.push(word3);
-		room.wordList.push(word4);
-		room.wordList.push(word5);
-	}
-}
-
-function checkIfEveryOneReady(roomName){
-	let room = roomList.get(roomName);
-	if(room){
-		let ready = true;
-		socketList.forEach((values,socketKey)=>{
-
-		for(let i = 0 ;i<room.playerList.length;i++) {
-  		if(room.playerList[i] == socketKey){
-  			if(!values.asChooseWord) ready=false;
-  		}
-	}
-	});
-
-		if(ready){
-			console.log("everybody ready")
-			startPhaseUn(room);
+function logoutUser(user){
+	if(user.value().inGame !=""){
+		let room = listRoom.get(user.value().nameRoom);
+		if(room){
+			let isUser = room.logoutUser(user.value().name);
+			if(!isUser) listRoom.delete(user.value().nameRoom);
 		}
 	}
-}
-
-function startPhaseUn(room){
-	let wordPhaseUn = randomize(room.wordList.slice());
-	room.timer = 46000;
-  		room.isPlayer = 0;
-  		room.isWords = 0;
-  		room.timeLanch = false;
-  		room.phase = "un";
-  		room.wordPhase = wordPhaseUn.slice();
-	socketList.forEach((values,socketKey)=>{
-
-		for(let i = 0 ;i<room.playerList.length;i++) {
-  		if(room.playerList[i] == socketKey){
-  			values.emit("startPhaseUn");
-  			console.log(room.playerList[i]);
-  			console.log(room.playerPoint.get(room.playerList[i]));
-  			values.emit("getPoint",room.playerPoint.get(room.playerList[i]));
-  			
-  		}
-  		
-  		
-  		socketList.get(room.playerList[0]).emit("yourTurn");
-	}
-	});
-
-}
-
-function startPhaseDeux(room){
-	if( room.timming) clearTimeout(room.timming);
-	room.isPlayer = (room.isPlayer+1)%room.playerList.length;
-
-	let wordPhaseDeux = randomize(room.wordList.slice());
-
-	room.timer = 46000;
-  		room.isWords = 0;
-  		room.timeLanch = false;
-  		room.phase = "deux";
-  		room.wordPhase = wordPhaseDeux.slice();
-	socketList.forEach((values,socketKey)=>{
-		for(let i = 0 ;i<room.playerList.length;i++) {
-  		if(room.playerList[i] == socketKey){
-  			values.emit("startPhaseDeux");
-  			values.emit("getPoint",room.playerPoint.get(room.playerList[i]));
-  			
-  		}
-  		
-  		socketList.get(room.playerList[room.isPlayer]).emit("yourTurn");
-	}
-	});
-
-}
-
-function startPhaseTrois(room){
-	if( room.timming) clearTimeout(room.timming);
-	room.isPlayer = (room.isPlayer+1)%room.playerList.length;
-	let wordPhaseDeux = randomize(room.wordList.slice());
-	room.timer = 61000;
-  		room.isWords = 0;
-  		room.timeLanch = false;
-  		room.phase = "trois";
-  		room.wordPhase = wordPhaseDeux.slice();
-	socketList.forEach((values,socketKey)=>{
-		for(let i = 0 ;i<room.playerList.length;i++) {
-  		if(room.playerList[i] == socketKey){
-  			values.emit("startPhaseTrois");
-  			values.emit("getPoint",room.playerPoint.get(room.playerList[i]));
-  			
-  		}
-  		
-  		socketList.get(room.playerList[room.isPlayer]).emit("yourTurn");
-	}
-	});
-
-}
-
-function getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
-}
-
-function randomize(tab) {
-    var i, j, tmp;
-    for (i = tab.length - 1; i > 0; i--) {
-        j = Math.floor(Math.random() * (i + 1));
-        tmp = tab[i];
-        tab[i] = tab[j];
-        tab[j] = tmp;
-    }
-    return tab
-
-}
-
-function playPhase(room){
-	if(!room.timeLanch){
-		room.timeLanch = true;
-		socketList.get(room.playerList[room.isPlayer]).emit("setTimer",room.timer)
-		room.timming = setTimeout(endTimer,room.timer,room);
-		
-	} 
-	if(room.wordPhase.length != 0){
-		if(socketList.get(room.playerList[room.isPlayer])){
-			room.isWords = (room.isWords+1)%room.wordPhase.length;
-			socketList.get(room.playerList[room.isPlayer]).emit("newWord",room.wordPhase[room.isWords])
-			socketList.get(room.playerList[room.isPlayer]).emit("getPoint",room.playerPoint.get(room.playerList[room.isPlayer]));
-		}
-		
-	}else{
-		socketList.get(room.playerList[room.isPlayer]).emit("endTimer");
-		changePhase(room);
-	}
-}
-
-
-function endTimer(room){
-	room.timeLanch=false;
-	if(socketList.get(room.playerList[room.isPlayer])){
-		socketList.get(room.playerList[room.isPlayer]).emit("notYourTurn");
-		socketList.get(room.playerList[room.isPlayer]).emit("getPoint",room.playerPoint.get(room.playerList[room.isPlayer]));
-	}
-	room.isPlayer = (room.isPlayer+1)%room.playerList.length;
-	if(socketList.get(room.playerList[room.isPlayer])){
-		socketList.get(room.playerList[room.isPlayer]).emit("yourTurn");
-		socketList.get(room.playerList[room.isPlayer]).emit("getPoint",room.playerPoint.get(room.playerList[room.isPlayer]));
-	}
-
-}
-
-function wordFind(playerName,roomName,word){
-	let room = roomList.get(roomName);
-	if(room){
-		let playerName = room.playerList[room.isPlayer];
-		let playerPoint = room.playerPoint.get(playerName);
-
-		room.playerPoint.set(playerName,playerPoint+1)
-		const index = room.wordPhase.indexOf(word);
-		if (index > -1) {
-  			room.wordPhase.splice(index, 1);
-		}
-
-		playPhase(room);
-	}
-}
-
-function changePhase(room){
-	if(room.phase =="un"){
-		startPhaseDeux(room);
-	}else if(room.phase=="deux"){
-		startPhaseTrois(room);
-	}else if(room.phase == "trois"){
-		endGame(room);
-	}
-}
-
-function endGame(room){
-	socketList.forEach((values,socketKey)=>{
-		for(let i = 0 ;i<room.playerList.length;i++) {
-  		if(room.playerList[i] == socketKey){
-  			values.emit("endGame",room.playerPoint);
-  			socketList.forEach((otherValue,otherSocketKey)=>{
-			for(let j = 0 ;j<room.playerList.length;j++) {
-				if(room.playerList[j] == otherSocketKey){
-					values.emit("getPlayersPoint",room.playerList[j],room.playerPoint.get(room.playerList[j]));
-				}
-			}
-			});
-  			
-  		}
-	}
-	});
-}
-
-function wordPass(roomName,word){
-let room = roomList.get(roomName);
-	if(room){
-		playPhase(room);
-	}
-}
-
-setInterval(broadcast,1000);
-function broadcast(){
-	socketList.forEach((values,socketKey)=>{
-		values.emit("ping");
-	});
+	user.set('inGame',null).write();
+	user.set('nameRoom',null).write();
 }
 

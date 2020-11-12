@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+  <head>
+  	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Home confinement</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+  </head>
+  <body class="bg-light d-flex flex-column h-100">
+
+  <header>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <a class="navbar-brand" href="/">Confinement</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="/home">Home <span class="sr-only">(current)</span></a>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav mt-2 mt-md-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/logout">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  </header>
+
+  <main role="main" class="flex-shrink-0">
+    <div class="container">
+      <div class="my-3 p-3 bg-white rounded shadow-sm">
+        <h4 class="border-bottom border-gray pb-2 mb-2">Home</h4>
+        <% if(user.name){ %>
+          <label >Bienvenue <%=user.name%></label>
+          <% } %>
+
+        
+      </div>
+
+      <div class="my-3 p-3 bg-white rounded shadow-sm">
+        
+        <h4 class="border-bottom border-gray pb-2 mb-2">Create Room</h4>
+        <form action="/createRoom" method="post">
+          <div class="form-group">
+            <label for="createRoom">Choisi un nom de Room</label>
+            <input type="text" class="form-control" id="createRoom" name="nameRoom" placeholder="Name Room">
+          </div>
+          <div class="form-group">
+            <label for="createRoomGame">Choisi un Jeu</label>
+              <select class="custom-select" id="createRoomGame" name="nameGame">
+                <option value="timeUp" selected>TimeUp</option>
+              </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg col-sm-6 offset-md-3">Create Room</button>
+        </form>
+        <% if(message.errorCreate){ %>
+          <div class="alert alert-warning" role="alert">
+            <label><strong>Error: </strong><%=message.errorCreate%></label>
+          </div>
+          <% } %>
+      </div>
+      <div class="my-3 p-3 bg-white rounded shadow-sm">
+
+        <h4 class="border-bottom border-gray pb-2 mb-2">Join Room</h4>
+        <form action="/joinRoom" method="post">
+          <div class="form-group">
+            <label for="joinRoom">Nom de la Room que tu veux rejoindre</label>
+            <input type="text" class="form-control" id="joinRoom" name="nameRoom" placeholder="Name Room">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg col-sm-6 offset-md-3">Join Room</button>
+        </form>
+        <% if(message.errorJoin){ %>
+          <div class="alert alert-warning" role="alert">
+            <label><strong>Error: </strong><%=message.errorJoin%></label>
+          </div>
+          <% } %>
+        
+      </div>
+    
+  </main>
+
+
+  <footer class="footer mt-auto py-3">
+      <div class="container">
+        <span class="text-muted">By TataVal</span>
+      </div>
+
+      <div class="modal fade" id="ModalErroMessage" role="dialog">
+        <div class="modal-dialog modal-confirm modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Error</h4>  
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p id="txt-modalError"></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">ok</button>
+            </div>
+          </div>
+        </div>      
+      </div>
+
+  </footer>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <!--<script>window.jQuery || document.write('<script src="/docs/4.3/assets/js/vendor/jquery-slim.min.js"><\/script>')</script>-->
+    <script type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/socket.io.js"></script>
+  </body>
+</html>

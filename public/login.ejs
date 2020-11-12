@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+  <head>
+  	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Home Confinement</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+  </head>
+  <body class="bg-light d-flex flex-column h-100">
+
+  <header>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <a class="navbar-brand" href="/">Confinement</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="/home">Home <span class="sr-only">(current)</span></a>
+        </li>
+        
+      </ul>
+
+    </div>
+  </nav>
+  </header>
+
+  <main role="main" class="flex-shrink-0">
+    <div class="container">
+      <div class="my-3 p-3 bg-white rounded shadow-sm">
+        <h4 class="border-bottom border-gray pb-2 mb-2">login</h4>
+
+        <form action="/login" method="post">
+          <div class="form-group">
+            <label for="user">nom utilisateur</label>
+            <input type="text" class="form-control" id="user" name="username">
+          </div>
+          <div class="form-group">
+            <label for="Password">Password</label>
+            <input type="password" class="form-control" id="Password" name="password">
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <% if(loginMessage != ""){ %>
+          <div class="alert alert-danger" role="alert">
+            <strong><%=loginMessage%></strong>
+          </div>
+          <% } %>
+        
+      </div>
+
+      <div class="my-3 p-3 bg-white rounded shadow-sm">
+        <h4 class="border-bottom border-gray pb-2 mb-2">SignIn</h4>
+
+        <form action="/signup" method="post">
+          <div class="form-group">
+            <label for="user">nom utilisateur</label>
+            <input type="text" class="form-control" id="user" name="username">
+          </div>
+          <div class="form-group">
+            <label for="Password">Password</label>
+            <input type="password" class="form-control" id="Password" name="password">
+          </div>
+          <button type="submit" class="btn btn-primary">signIn</button>
+        </form>
+        <% if(signupMessage != ""){ %>
+          <div class="alert alert-danger" role="alert">
+            <strong><%=signupMessage%></strong>
+          </div>
+          <% } %>
+      </div>
+    
+  </main>
+
+
+  <footer class="footer mt-auto py-3">
+      <div class="container">
+        <span class="text-muted">By TataVal</span>
+      </div>
+
+      <div class="modal fade" id="ModalErroMessage" role="dialog">
+        <div class="modal-dialog modal-confirm modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Error</h4>  
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p id="txt-modalError"></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">ok</button>
+            </div>
+          </div>
+        </div>      
+      </div>
+
+  </footer>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <!--<script>window.jQuery || document.write('<script src="/docs/4.3/assets/js/vendor/jquery-slim.min.js"><\/script>')</script>-->
+    <script type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/socket.io.js"></script>
+  </body>
+</html>
